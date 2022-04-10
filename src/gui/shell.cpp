@@ -1,4 +1,5 @@
 #include "shell.h"
+#include<set>
 
 #include <cmath>
 #include <QApplication>
@@ -334,6 +335,8 @@ void Shell::init()
 	}
 	options.insert("rgb", true);
 
+    options.insert("ext_messages", true);
+
 	MsgpackRequest* req{ nullptr };
 	if (m_nvim->api2()) {
 		req = m_nvim->api2()->nvim_ui_attach(shellWidth, shellHeight, options);
@@ -492,8 +495,30 @@ void Shell::handleSetScrollRegion(const QVariantList& opargs)
 				QPoint(right+1, bot+1));
 }
 
+static std::set<std::string> skip = {
+    "put",
+    "cursor_goto",
+    "flush",
+    "highlight_set",
+    "win_viewport",
+    "eol_clear",
+    "busy_stop",
+    "busy_start"
+};
+
 void Shell::handleRedraw(const QByteArray& name, const QVariantList& opargs)
 {
+    /* bool skip_debug = false; */
+    /* for (const auto& n : skip) */
+    /*     if (n.c_str() == name) */
+    /*     { */
+    /*         skip_debug = true; */
+    /*         break; */
+    /*     } */
+
+    /* if (!skip_debug) */
+    /*     qDebug() << "name : " << name << " args : " << opargs; */
+
 	if (name == "update_fg") {
 		if (opargs.size() < 1 || !opargs.at(0).canConvert<quint64>()) {
 			qWarning() << "Unexpected arguments for redraw:" << name << opargs;
@@ -609,10 +634,44 @@ void Shell::handleRedraw(const QByteArray& name, const QVariantList& opargs)
 		handleGridScroll(opargs);
 	} else if (name == "hl_group_set") {
 		handleHighlightGroupSet(opargs);
+    } else if (name == "msg_show") {
+        handleCommandMessage(name, opargs);
+    } else if (name == "msg_clear") {
+        handleCommandMessage(name, opargs);
+    } else if (name == "msg_showmode") {
+        handleCommandMessage(name, opargs);
+    } else if (name == "msg_showcmd") {
+        handleCommandMessage(name, opargs);
+    } else if (name == "msg_ruler") {
+        handleCommandMessage(name, opargs);
+    } else if (name == "msg_history_show") {
+        handleCommandMessage(name, opargs);
 	} else {
 		// Uncomment for writing new event handling code.
 		// qDebug() << "Received unknown redraw notification" << name << opargs;
 	}
+}
+
+void Shell::commandEntered()
+{
+    QByteArray ba = ":"; 
+    ba += m_command->text();
+    qDebug() << "sending : " << ba;
+    m_nvim->api0()->vim_input(ba + "<Enter>");
+    m_command->clear();
+
+    this->setFocus();
+}
+
+void Shell::handleCommandMessage(const QByteArray& name, const QVariantList& opargs) noexcept
+{
+    qDebug() << name << ", " << opargs;
+
+    if (name == "msg_showcmd")
+    {
+        if (opargs.at(0).toList().at(0).toList().at(1).toByteArray() == ":")
+            m_command->setFocus();
+    }
 }
 
 void Shell::handlePopupMenuShow(const QVariantList& opargs)

@@ -5,6 +5,7 @@
 #include <QSettings>
 #include <QStyleFactory>
 #include <QToolBar>
+#include <QLineEdit>
 
 namespace NeovimQt {
 
@@ -61,9 +62,19 @@ void MainWindow::init(NeovimConnector *c)
 	// QSplitter does not allow layouts directly: QWidget { HLayout { ShellWidget, QScrollBar } }
 	QWidget* shellScrollable{ new QWidget() };
 	QHBoxLayout* layout{ new QHBoxLayout() };
+	QVBoxLayout* shellCommandLayout{ new QVBoxLayout() };
+    QLineEdit* command{new QLineEdit() };
+
+    m_shell->setCommadWidget(command);
+
+    shellCommandLayout->setSpacing(0);
+	shellCommandLayout->setContentsMargins(0, 0, 0, 0);
+    shellCommandLayout->addWidget(m_shell);
+    shellCommandLayout->addWidget(command);
+
 	layout->setSpacing(0);
 	layout->setContentsMargins(0, 0, 0, 0);
-	layout->addWidget(m_shell);
+	layout->addLayout(shellCommandLayout);
 	layout->addWidget(m_scrollbar);
 	shellScrollable->setLayout(layout);
 

@@ -9,6 +9,7 @@
 #include <QUrl>
 #include <QVariantList>
 #include <QWidget>
+#include <QLineEdit>
 
 #include "neovimconnector.h"
 #include "popupmenu.h"
@@ -65,6 +66,11 @@ public:
 
 	ShellOptions& GetShellOptions() noexcept { return m_options; }
 
+    void setCommadWidget(QLineEdit* command) { 
+        m_command = command; 
+        connect(m_command, &QLineEdit::returnPressed, this, &Shell::commandEntered);
+    }
+
 	/// Dispatches Neovim redraw notifications to T::handleRedraw
 	template <class T>
 	static void DispatchRedrawNotifications(
@@ -101,6 +107,7 @@ public slots:
 	bool setGuiFontWide(const QString& fdesc) noexcept;
 	void updateGuiWindowState(Qt::WindowStates state);
 	void openFiles(const QList<QUrl> url);
+    void commandEntered();
 
 protected slots:
 	void neovimError(NeovimConnector::NeovimError);
@@ -172,6 +179,9 @@ protected:
 	virtual void handleGuiAdaptiveStyle(const QVariantList& opargs) noexcept;
 	virtual void handleGuiAdaptiveStyleList() noexcept;
 
+    // Message window
+    virtual void handleCommandMessage(const QByteArray& name, const QVariantList& opargs) noexcept;
+
 	void neovimMouseEvent(QMouseEvent *ev);
 	virtual void mousePressEvent(QMouseEvent *ev) Q_DECL_OVERRIDE;
 	virtual void mouseReleaseEvent(QMouseEvent *ev) Q_DECL_OVERRIDE;
@@ -236,6 +246,8 @@ private:
 	ShellOptions m_options;
 	PopupMenu m_pum{ this };
 	bool m_mouseEnabled{ true };
+
+    QLineEdit* m_command{nullptr};
 };
 
 class ShellRequestHandler: public QObject, public MsgpackRequestHandler
