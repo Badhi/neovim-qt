@@ -669,8 +669,60 @@ void Shell::handleCommandMessage(const QByteArray& name, const QVariantList& opa
 
     if (name == "msg_showcmd")
     {
-        if (opargs.at(0).toList().at(0).toList().at(1).toByteArray() == ":")
+        if (opargs.empty())
+            return;
+
+        QList<QVariant> l = opargs.at(0).toList();
+
+        if (l.empty())
+            return;
+
+        l = l.at(0).toList();
+
+        if (l.size() < 1) 
+            return;
+
+        QByteArray b = l.at(1).toByteArray();
+
+        if (b == ":")
+        {
+            m_command->clear();
+
+            QPalette p;
+            p.setColor(QPalette::Base, Qt::white);
+            p.setColor(QPalette::Text, Qt::black);
+            m_command->setPalette(p);
+
             m_command->setFocus();
+        }
+    }
+    else if (name == "msg_show")
+    {
+        if (opargs.size() != 3)
+            return;
+
+        auto type = opargs.at(0).toByteArray();
+
+        if (type == "emsg")
+        {
+            QPalette p;
+            p.setColor(QPalette::Base, Qt::red);
+            p.setColor(QPalette::Text, Qt::white);
+            m_command->setPalette(p);
+        }
+    
+        auto msgList = opargs.at(1).toList();
+        if (msgList.empty())
+            return;
+
+        msgList = msgList.at(0).toList();
+
+        if (msgList.size() < 2)
+            return;
+
+        auto b = msgList.at(1).toByteArray();
+
+        m_command->setText(b);
     }
 }
 
